@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Finance Tracker — Adrian (c) 2025</title>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#fff;
+      --muted:#6b7280;
+      --accent:#0d6efd;
+      --danger:#ef4444;
+      --success:#10b981;
+      --text:#0f172a;
+      --glass: rgba(255,255,255,0.6);
+    }
+    .dark{
+      --bg:#0b1220;
+      --card:#071127;
+      --muted:#9aa3b2;
+      --accent:#4ea8ff;
+      --danger:#ff6b6b;
+      --success:#34d399;
+      --text:#e6eef8;
+      --glass: rgba(255,255,255,0.03);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:linear-gradient(180deg,var(--bg), #e9eef8);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    header{
+      background:linear-gradient(90deg,var(--accent),#2563eb);
+      color:white;
+      padding:18px 20px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      box-shadow:0 6px 18px rgba(13,110,253,0.12);
+    }
+    header h1{margin:0;font-size:18px}
+    header .controls{display:flex;gap:10px;align-items:center}
+
+    .container{max-width:1100px;margin:18px auto;padding:18px;border-radius:12px;background:var(--card);box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
+    .card{background:linear-gradient(180deg,var(--glass),transparent);padding:14px;border-radius:10px;border:1px solid rgba(0,0,0,0.04)}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+    input[type="text"], input[type="number"], select, textarea{
+      width:100%;padding:9px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);margin-top:6px;background:transparent;color:var(--text)
+    }
+    button{
+      padding:9px 12px;border-radius:8px;border:0;background:var(--accent);color:white;cursor:pointer;
+    }
+    .muted{color:var(--muted);font-size:13px}
+    table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+    th,td{padding:8px;border-bottom:1px dashed rgba(0,0,0,0.06)}
+    .small{font-size:12px}
+    .danger{background:var(--danger)}
+    .success{background:var(--success)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .space{display:flex;justify-content:space-between;align-items:center}
+    .footer{margin-top:18px;padding:10px;border-radius:8px;text-align:center;color:var(--muted);font-size:13px}
+
+    /* responsive */
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,0.04);font-weight:600}
+    .chart-wrap{height:260px}
+    .row{display:flex;gap:8px}
+    .col{flex:1}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .secondary{background:transparent;border:1px solid rgba(0,0,0,0.06);color:var(--text)}
+    .small-btn{padding:6px 8px;border-radius:6px;font-size:13px}
+    footer small{display:block;margin-top:6px;color:var(--muted)}
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(180deg,#fff6,#fff0);display:flex;align-items:center;justify-content:center;font-weight:700;color:#083aeb">AF</div>
+    <div>
+      <h1>Finance Tracker — Adrian</h1>
+	  <div class="small" style="color:white;">Offline PWA • localStorage • v1 (2025)</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="themeToggle" class="small-btn secondary">Toggle Dark</button>
+    <button id="installBtn" class="small-btn">Install App</button>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <!-- LEFT MAIN COLUMN -->
+    <div>
+
+      <!-- SALARY / SAVINGS / DAYS -->
+      <div class="card">
+        <div class="space">
+          <h3 style="margin:0">Income & Settings</h3>
+          <div class="muted small">Saved locally</div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div class="col">
+            <label>Monthly Salary</label>
+            <input id="salary" type="number" min="0" placeholder="Enter monthly salary" />
+          </div>
+          <div style="width:12px"></div>
+          <div class="col">
+            <label>Savings Goal</label>
+            <input id="savingsGoal" type="number" min="0" placeholder="Your target savings this month" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div class="col">
+            <label>Days Before Salary</label>
+            <input id="daysBeforeSalary" type="number" min="0" placeholder="Days left until next salary" />
+          </div>
+          <div class="col">
+            <label>Active Income Source</label>
+            <select id="incomeSourceSelect"></select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px; align-items:center">
+          <div class="col">
+            <label class="small">Add Income Source</label>
+            <div style="display:flex;gap:8px">
+              <input id="newIncomeSource" type="text" placeholder="e.g., Main job / Freelance" />
+              <button id="addIncomeSource">Add</button>
+            </div>
+          </div>
+          <div style="width:12px"></div>
+          <div style="width:220px">
+            <label class="small">Add Debt</label>
+            <div style="display:flex;gap:8px">
+              <input id="debtDesc" type="text" placeholder="Debt description" />
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <input id="debtAmount" type="number" placeholder="Amount" />
+              <button id="addDebt" class="small-btn">Add Debt</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSACTION ENTRY -->
+      <div class="card" style="margin-top:14px">
+        <h3 style="margin:0">Add Transaction</h3>
+
+        <div class="row" style="margin-top:10px">
+          <div style="width:160px">
+            <label>Type</label>
+            <select id="txType">
+              <option value="expense">Expense</option>
+              <option value="saving">Saving (log)</option>
+              <option value="income">Income (one-off)</option>
+              <option value="debtPayment">Debt Payment</option>
+            </select>
+          </div>
+
+          <div style="width:140px">
+            <label>Category</label>
+            <select id="txCategory">
+              <option value="need">Need</option>
+              <option value="want">Want</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="col">
+            <label>Description</label>
+            <input id="txDesc" type="text" placeholder="e.g., Groceries, Netflix" />
+          </div>
+
+          <div style="width:120px">
+            <label>Amount</label>
+            <input id="txAmount" type="number" placeholder="0.00" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+          <label style="margin:0"><input id="txDate" type="date" /> <span class="muted small">date</span></label>
+          <div style="flex:1"></div>
+          <button id="addTx">Add Transaction</button>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS TABLE -->
+      <div class="card" style="margin-top:14px">
+        <div class="space">
+          <h3 style="margin:0">Transactions</h3>
+          <div>
+            <select id="filterMonth"></select>
+            <select id="filterYear"></select>
+            <select id="filterType">
+              <option value="all">All</option>
+              <option value="expense">Expenses</option>
+              <option value="saving">Savings</option>
+              <option value="income">Incomes</option>
+              <option value="debtPayment">Debt Payments</option>
+            </select>
+            <button id="exportCsv" class="small-btn secondary">Export CSV</button>
+            <button id="archiveMonth" class="small-btn secondary">Archive Month</button>
+          </div>
+        </div>
+
+        <div style="max-height:360px;overflow:auto;margin-top:8px">
+          <table id="txTable">
+            <thead>
+              <tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDE (summary + charts + debts) -->
+    <aside>
+      <div class="card">
+        <div class="space">
+          <h3 style="margin:0">Summary</h3>
+          <div class="muted small">Auto-calculated</div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="row">
+            <div class="col card" style="padding:10px">
+              <div class="muted small">Total Income</div>
+              <div id="totalIncome" style="font-size:20px;font-weight:700">₱0.00</div>
+            </div>
+            <div class="col card" style="padding:10px">
+              <div class="muted small">Total Expenses</div>
+              <div id="totalExpenses" style="font-size:20px;font-weight:700">₱0.00</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <div class="col card" style="padding:10px">
+              <div class="muted small">Saved (logged)</div>
+              <div id="totalSaved" style="font-size:18px;font-weight:700">₱0.00</div>
+            </div>
+            <div class="col card" style="padding:10px">
+              <div class="muted small">Debts Outstanding</div>
+              <div id="totalDebts" style="font-size:18px;font-weight:700;color:var(--danger)">₱0.00</div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px" class="card">
+            <div class="muted small">Remaining Spendable (before salary & goal)</div>
+            <div style="font-size:18px;font-weight:700" id="remainingSpend">₱0.00</div>
+            <div class="muted small" style="margin-top:6px">Daily limit (days left)</div>
+            <div style="font-size:16px;font-weight:600" id="dailyLimit">₱0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="card" style="margin-top:12px">
+        <h3 style="margin:0">Needs vs Wants vs Savings</h3>
+        <div class="chart-wrap" style="margin-top:10px">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Debts List -->
+      <div class="card" style="margin-top:12px">
+        <div class="space"><h3 style="margin:0">Debts</h3><div class="muted small">Manage debts</div></div>
+        <div id="debtsList" style="margin-top:8px"></div>
+      </div>
+
+      <!-- Income sources -->
+      <div class="card" style="margin-top:12px">
+        <div class="space"><h3 style="margin:0">Income Sources</h3><div class="muted small">You can choose active</div></div>
+        <div id="incomeList" style="margin-top:8px"></div>
+      </div>
+
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <div style="font-weight:700">Finance Tracker by Adrian (c) 2025</div>
+    <small>Optional donations: GCASH / Maya — 09151328466</small>
+  </footer>
+</main>
+
+<script>
+/* =========================
+   App: Single-file PWA + Offline
+   - All data in localStorage.
+   - Service worker & manifest created as blobs at runtime (so single file).
+   ========================= */
+
+const APP = {
+  keyTx: 'ft_transactions',        // array of tx objects
+  keyIncomeSources: 'ft_income_sources',
+  keyDebts: 'ft_debts',
+  keySalary: 'ft_salary',
+  keySavingsGoal: 'ft_savings_goal',
+  keyDays: 'ft_days_before_salary',
+  keyArchives: 'ft_archives'       // object by YYYY-MM e.g., "2025-11": {transactions:[], ts:...}
+};
+
+/* --- helpers --- */
+const $ = id => document.getElementById(id);
+const fmt = v => Number(v || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+const todayISO = () => new Date().toISOString().slice(0,10);
+
+/* --- init storage if empty --- */
+function getStore(key, def){
+  try{ return JSON.parse(localStorage.getItem(key)) ?? def; }catch(e){ return def; }
+}
+function setStore(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+/* default seed */
+if(!getStore(APP.keyIncomeSources, null)){
+  setStore(APP.keyIncomeSources, [{id:1,name:"Main Job"},{id:2,name:"Side Hustle"}]);
+}
+
+/* --- UI elements --- */
+const txTableBody = document.querySelector('#txTable tbody');
+const filterMonth = $('filterMonth');
+const filterYear = $('filterYear');
+const filterType = $('filterType');
+const incomeSourceSelect = $('incomeSourceSelect');
+const incomeListDiv = $('incomeList');
+const debtsListDiv = $('debtsList');
+
+let pieChart = null;
+
+/* --- Service Worker & Manifest (created as blob URLs) --- */
+async function registerServiceWorkerAndManifest(){
+  // service worker code as string
+  const swCode = `
+    const CACHE = 'ft-cache-v1';
+    const PRECACHE = [
+      '.', // root
+      location.href,
+      ${JSON.stringify('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')}
+    ];
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+      e.waitUntil(
+        caches.open(CACHE).then(c => c.addAll(PRECACHE)).catch(()=>{})
+      );
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(self.clients.claim());
+    });
+    self.addEventListener('fetch', event => {
+      event.respondWith(
+        caches.match(event.request).then(resp => resp || fetch(event.request).catch(()=>{}))
+      );
+    });
+  `;
+
+  try{
+    const blob = new Blob([swCode], {type:'text/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    if('serviceWorker' in navigator){
+      await navigator.serviceWorker.register(swUrl);
+      console.log('Service worker registered (blob)');
+    }
+  }catch(e){
+    console.warn('SW failed', e);
+  }
+
+  // manifest
+  const manifest = {
+    name: "Finance Tracker (Adrian)",
+    short_name: "FinanceTracker",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#0d6efd",
+    icons:[
+      {src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192'%3E%3Crect width='100%25' height='100%25' fill='%230d6efd'/%3E%3Ctext x='50%25' y='55%25' font-size='72' text-anchor='middle' fill='white' font-family='Arial'%3EAF%3C/text%3E%3C/svg%3E", sizes:"192x192", type:"image/svg+xml"}
+    ]
+  };
+  const mfBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const mfUrl = URL.createObjectURL(mfBlob);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = mfUrl;
+  document.head.appendChild(link);
+}
+
+/* Prompt install */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $('installBtn').style.display = 'inline-block';
+});
+$('installBtn').addEventListener('click', async ()=>{
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    const {outcome} = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    $('installBtn').style.display = 'none';
+  } else {
+    alert('If your browser supports installing PWAs, you can install from the browser menu.');
+  }
+});
+
+/* --- Data functions --- */
+function loadTransactions(){ return getStore(APP.keyTx, []); }
+function saveTransactions(arr){ setStore(APP.keyTx, arr); }
+
+function loadIncomeSources(){ return getStore(APP.keyIncomeSources, []); }
+function saveIncomeSources(arr){ setStore(APP.keyIncomeSources, arr); }
+
+function loadDebts(){ return getStore(APP.keyDebts, []); }
+function saveDebts(arr){ setStore(APP.keyDebts, arr); }
+
+function getSalary(){ return Number(getStore(APP.keySalary, 0) || 0); }
+function setSalary(v){ setStore(APP.keySalary, Number(v||0)); }
+
+function getSavingsGoal(){ return Number(getStore(APP.keySavingsGoal, 0) || 0); }
+function setSavingsGoal(v){ setStore(APP.keySavingsGoal, Number(v||0)); }
+
+function getDaysBefore(){ return Number(getStore(APP.keyDays, 0) || 0); }
+function setDaysBefore(v){ setStore(APP.keyDays, Number(v||0)); }
+
+/* --- UI population --- */
+function populateMonthsYears(){
+  const now = new Date();
+  // months options (last 24 months)
+  filterMonth.innerHTML = '';
+  const monthNames = ["01","02","03","04","05","06","07","08","09","10","11","12"];
+  monthNames.forEach((m,i)=> {
+    const opt = document.createElement('option'); opt.value=(i+1).toString().padStart(2,'0'); opt.text = m;
+    if(i===now.getMonth()) opt.selected = true;
+    filterMonth.appendChild(opt);
+  });
+  filterYear.innerHTML = '';
+  for(let y=now.getFullYear(); y>= now.getFullYear()-5; y--){
+    const opt = document.createElement('option'); opt.value = y; opt.text = y;
+    filterYear.appendChild(opt);
+  }
+}
+
+function populateIncomeSources(){
+  const list = loadIncomeSources();
+  incomeSourceSelect.innerHTML = '';
+  list.forEach(s=>{
+    const o = document.createElement('option'); o.value = s.id; o.text = s.name;
+    incomeSourceSelect.appendChild(o);
+  });
+
+  // income list UI
+  incomeListDiv.innerHTML='';
+  list.forEach(s=>{
+    const el = document.createElement('div');
+    el.style.padding='6px'; el.style.borderBottom='1px dashed rgba(0,0,0,0.06)';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div>${s.name}</div>
+      <div><button class="small-btn secondary" onclick="renameIncome(${s.id})">Rename</button>
+      <button class="small-btn" onclick="removeIncome(${s.id})">Remove</button></div></div>`;
+    incomeListDiv.appendChild(el);
+  });
+}
+
+/* --- Transactions render --- */
+function renderTransactions(){
+  const txs = loadTransactions();
+  const m = filterMonth.value || (new Date().getMonth()+1).toString().padStart(2,'0');
+  const y = filterYear.value || new Date().getFullYear();
+  const typeF = filterType.value || 'all';
+  txTableBody.innerHTML='';
+  const filtered = txs.filter(t=>{
+    const d = new Date(t.date);
+    const matchesMonth = (d.getMonth()+1).toString().padStart(2,'0') === m && d.getFullYear().toString() === y.toString();
+    return matchesMonth && (typeF==='all' ? true : t.type === typeF);
+  });
+  filtered.sort((a,b)=> new Date(b.date) - new Date(a.date));
+  filtered.forEach((t,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.date}</td>
+      <td>${t.type}</td><td>${t.category||''}</td>
+      <td>${t.desc||''}</td><td>₱${fmt(t.amount)}</td>
+      <td>
+        <button class="small-btn secondary" onclick="editTx('${t.id}')">Edit</button>
+        <button class="small-btn danger" onclick="deleteTx('${t.id}')">Delete</button>
+      </td>`;
+    txTableBody.appendChild(tr);
+  });
+}
+
+/* --- Debts render --- */
+function renderDebts(){
+  const arr = loadDebts();
+  debtsListDiv.innerHTML='';
+  if(arr.length===0){ debtsListDiv.innerHTML = '<div class="muted small">No debts recorded</div>'; return; }
+  arr.forEach(d=>{
+    const el = document.createElement('div');
+    el.style.padding='6px'; el.style.borderBottom='1px dashed rgba(0,0,0,0.06)';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>${d.desc}</strong><div class="muted small">Outstanding: ₱${fmt(d.amount)}</div></div>
+      <div>
+        <button class="small-btn secondary" onclick="payDebt('${d.id}')">Pay</button>
+        <button class="small-btn danger" onclick="removeDebt('${d.id}')">Remove</button>
+      </div>
+    </div>`;
+    debtsListDiv.appendChild(el);
+  });
+}
+
+/* --- calculations & chart --- */
+function recalcAndRender(){
+  const txs = loadTransactions();
+  const salary = getSalary(), savingsGoal = getSavingsGoal(), days = getDaysBefore();
+  // totals
+  const totals = {income:0, expense:0, saving:0, needs:0, wants:0};
+  txs.forEach(t=>{
+    if(t.type==='income') totals.income += t.amount;
+    if(t.type==='expense') totals.expense += t.amount;
+    if(t.type==='saving') totals.saving += t.amount;
+    if(t.category==='need') totals.needs += t.amount;
+    if(t.category==='want') totals.wants += t.amount;
+  });
+  const debts = loadDebts().reduce((s,d)=>s + Number(d.amount||0), 0);
+
+  $('totalIncome').innerText = '₱' + fmt(totals.income);
+  $('totalExpenses').innerText = '₱' + fmt(totals.expense);
+  $('totalSaved').innerText = '₱' + fmt(totals.saving);
+  $('totalDebts').innerText = '₱' + fmt(debts);
+
+  // Remaining spendable = salary + logged incomes - expenses - (savingsGoal - loggedSavings)
+  const loggedIncomes = totals.income;
+  const spendable = (salary + loggedIncomes) - totals.expense - Math.max(0, (savingsGoal - totals.saving));
+  $('remainingSpend').innerText = '₱' + fmt(spendable);
+
+  if(days>0){
+    const daily = spendable / days;
+    $('dailyLimit').innerText = '₱' + fmt(daily);
+  } else {
+    $('dailyLimit').innerText = '₱' + fmt(spendable);
+  }
+
+  // pie chart data (needs, wants, savings logged)
+  const data = [totals.needs, totals.wants, totals.saving];
+  updateChart(data);
+}
+
+/* --- Chart setup --- */
+function initChart(){
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  pieChart = new Chart(ctx, {
+    type:'pie',
+    data:{
+      labels:['Needs','Wants','Savings (logged)'],
+      datasets:[{
+        data:[0,0,0],
+        backgroundColor:['#2563eb','#f97316','#10b981']
+      }]
+    },
+    options:{
+      plugins:{legend:{position:'bottom'}},
+      responsive:true,
+      maintainAspectRatio:false
+    }
+  });
+}
+function updateChart(arr){
+  if(!pieChart) initChart();
+  pieChart.data.datasets[0].data = arr.map(v => Number(v||0));
+  pieChart.update();
+}
+
+/* --- utilities for IDs --- */
+function uid(prefix='id'){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+
+/* --- CRUD TXs --- */
+function addTransactionFromForm(){
+  const type = $('txType').value;
+  const category = $('txCategory').value;
+  const desc = $('txDesc').value.trim();
+  const amount = Number($('txAmount').value || 0);
+  const date = $('txDate').value || todayISO();
+
+  if(!desc || !amount || amount <= 0){
+    alert('Please fill description and amount (>0).');
+    return;
+  }
+  const txs = loadTransactions();
+  txs.push({ id: uid('tx'), type, category, desc, amount, date, ts: Date.now() });
+  saveTransactions(txs);
+  // if income -> optionally associate to active source (not required)
+  $('txDesc').value=''; $('txAmount').value=''; $('txDate').value='';
+  renderTransactions(); recalcAndRender();
+}
+
+function deleteTx(id){
+  if(!confirm('Delete this transaction?')) return;
+  let txs = loadTransactions();
+  txs = txs.filter(t=> t.id !== id);
+  saveTransactions(txs); renderTransactions(); recalcAndRender();
+}
+
+function editTx(id){
+  const txs = loadTransactions();
+  const t = txs.find(x=>x.id===id);
+  if(!t) return;
+  // simple prompt-based edit for completeness
+  const newDesc = prompt('Edit description', t.desc);
+  if(newDesc===null) return;
+  const newAmount = prompt('Edit amount', t.amount);
+  if(newAmount===null) return;
+  t.desc = newDesc;
+  t.amount = Number(newAmount) || t.amount;
+  saveTransactions(txs); renderTransactions(); recalcAndRender();
+}
+
+/* --- Debts --- */
+function addDebt(desc, amount){
+  const arr = loadDebts();
+  arr.push({ id: uid('debt'), desc, amount: Number(amount||0) });
+  saveDebts(arr); renderDebts(); recalcAndRender();
+}
+function payDebt(id){
+  const arr = loadDebts();
+  const d = arr.find(x=>x.id===id);
+  if(!d) return;
+  const pay = Number(prompt(`Enter amount to pay for "${d.desc}" (outstanding ₱${fmt(d.amount)})`, d.amount));
+  if(isNaN(pay) || pay<=0) return;
+  d.amount = Math.max(0, Number(d.amount) - pay);
+  if(d.amount === 0){
+    // optionally remove or keep with zero
+    if(confirm('Debt fully paid. Remove from list?')){
+      const filtered = arr.filter(x=>x.id!==id); saveDebts(filtered);
+    } else { saveDebts(arr); }
+  } else {
+    saveDebts(arr);
+  }
+  renderDebts(); recalcAndRender();
+}
+function removeDebt(id){
+  if(!confirm('Remove this debt?')) return;
+  const arr = loadDebts().filter(x=>x.id!==id);
+  saveDebts(arr); renderDebts(); recalcAndRender();
+}
+
+/* --- Income source management --- */
+function addIncomeSource(name){
+  if(!name) return;
+  const arr = loadIncomeSources();
+  arr.push({ id: Date.now(), name });
+  saveIncomeSources(arr); populateIncomeSources();
+}
+function removeIncome(id){ if(!confirm('Remove income source?')) return; const arr = loadIncomeSources().filter(x=>x.id!==id); saveIncomeSources(arr); populateIncomeSources(); }
+function renameIncome(id){
+  const arr = loadIncomeSources();
+  const s = arr.find(x=>x.id===id);
+  if(!s) return;
+  const n = prompt('Rename income source', s.name);
+  if(n){ s.name = n; saveIncomeSources(arr); populateIncomeSources(); }
+}
+
+/* --- archive month --- */
+function archiveCurrentMonth(){
+  const m = filterMonth.value.padStart(2,'0');
+  const y = filterYear.value;
+  const key = `${y}-${m}`;
+  const archives = getStore(APP.keyArchives, {});
+  if(archives[key] && !confirm('Archive exists for this month. Overwrite?')) return;
+  // store current month's txs
+  const txs = loadTransactions();
+  const monthTx = txs.filter(t=>{
+    const d = new Date(t.date); return (d.getMonth()+1).toString().padStart(2,'0')===m && d.getFullYear().toString()===y.toString();
+  });
+  archives[key] = { ts: Date.now(), transactions: monthTx };
+  setStore(APP.keyArchives, archives);
+  alert('Archived ' + key);
+}
+
+/* --- CSV export --- */
+function exportCsv(){
+  const txs = loadTransactions();
+  const m = filterMonth.value.padStart(2,'0');
+  const y = filterYear.value;
+  const filtered = txs.filter(t=>{
+    const d = new Date(t.date);
+    return (d.getMonth()+1).toString().padStart(2,'0')===m && d.getFullYear().toString()===y.toString();
+  });
+  const rows = [['date','type','category','description','amount']];
+  filtered.forEach(t=> rows.push([t.date,t.type,t.category,t.desc, t.amount]));
+  const csv = rows.map(r=> r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `finance_${y}-${m}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* --- UI event wiring --- */
+document.getElementById('addIncomeSource').addEventListener('click', ()=>{
+  const v = $('newIncomeSource').value.trim();
+  if(!v) return alert('Enter name');
+  addIncomeSource(v); $('newIncomeSource').value='';
+});
+
+document.getElementById('addDebt').addEventListener('click', ()=>{
+  const desc = $('debtDesc').value.trim();
+  const amt = Number($('debtAmount').value || 0);
+  if(!desc || !amt) return alert('Enter debt desc and amount');
+  addDebt(desc, amt);
+  $('debtDesc').value=''; $('debtAmount').value='';
+});
+
+/* tx add */
+$('addTx').addEventListener('click', addTransactionFromForm);
+
+/* filters */
+filterMonth.addEventListener('change', renderTransactions);
+filterYear.addEventListener('change', renderTransactions);
+filterType.addEventListener('change', renderTransactions);
+
+/* export & archive */
+$('exportCsv').addEventListener('click', exportCsv);
+$('archiveMonth').addEventListener('click', archiveCurrentMonth);
+
+/* save settings (salary/savings/days) immediately */
+$('salary').addEventListener('input', e=>{ setSalary(Number(e.target.value||0)); recalcAndRender(); });
+$('savingsGoal').addEventListener('input', e=>{ setSavingsGoal(Number(e.target.value||0)); recalcAndRender(); });
+$('daysBeforeSalary').addEventListener('input', e=>{ setDaysBefore(Number(e.target.value||0)); recalcAndRender(); });
+
+/* simple tx edit helpers exposed to global for button inline handlers */
+window.editTx = editTx;
+window.deleteTx = deleteTx;
+window.removeDebt = removeDebt;
+window.payDebt = payDebt;
+window.removeIncome = removeIncome;
+window.renameIncome = renameIncome;
+
+/* theme toggle */
+const themeToggle = $('themeToggle');
+function applyTheme(){
+  const dark = localStorage.getItem('ft_dark') === '1';
+  document.documentElement.classList.toggle('dark', dark);
+  themeToggle.innerText = dark ? 'Light Mode' : 'Dark Mode';
+}
+themeToggle.addEventListener('click', ()=>{
+  const dark = localStorage.getItem('ft_dark') === '1';
+  localStorage.setItem('ft_dark', dark ? '0' : '1');
+  applyTheme();
+});
+
+/* add tx default date to today */
+$('txDate').value = todayISO();
+
+/* add income via tx if type==income automatically */
+function wireAutoIncome(){
+  // if tx type is income, the user may choose active income source — but for now no special handling required.
+}
+
+/* initial load */
+(function init(){
+  registerServiceWorkerAndManifest().catch(()=>{});
+  populateMonthsYears();
+  populateIncomeSources();
+  renderTransactions();
+  renderDebts();
+  initChart();
+  recalcAndRender();
+  applyTheme();
+
+  // load saved settings into fields
+  $('salary').value = getSalary() || '';
+  $('savingsGoal').value = getSavingsGoal() || '';
+  $('daysBeforeSalary').value = getDaysBefore() || '';
+
+  // hook CSV and others done earlier
+})();
+
+/* export helper for debugging */
+window.exportAllData = ()=>{
+  const data = {
+    transactions: loadTransactions(),
+    incomes: loadIncomeSources(),
+    debts: loadDebts(),
+    salary: getSalary(),
+    
+    
+    savingsGoal: getSavingsGoal(),
+    daysBefore: getDaysBefore(),
+    archives: getStore(APP.keyArchives, {})
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = 'finance_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* wire add tx when pressing Enter on amount */
+$('txAmount').addEventListener('keydown', (e)=>{ if(e.key==='Enter') addTransactionFromForm(); });
+
+/* Attach exportAllData to a keyboard shortcut - Ctrl+Shift+E */
+document.addEventListener('keydown', (e)=>{
+  if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'e'){
+    exportAllData();
+  }
+});
+</script>
+</body>
+</html>
