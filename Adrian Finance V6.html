@@ -9,6 +9,34 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <style>
+    /* Keep existing styles… */
+
+/* Responsive tweaks */
+@media (max-width: 1080px) {
+  .grid { grid-template-columns: 1fr; }  /* one-column layout (already present) */
+}
+@media (max-width: 1080x) {
+  .grid { grid-template-columns: 1fr; }
+  .row { 
+    flex-direction: column;
+    flex-wrap: wrap;
+  }
+  #txType, #txCategory, #txAmount { width: 100% !important; }
+  header { padding: 10px; }
+  .container { margin: 10px auto; padding: 10px; }
+  .space { flex-direction: column; align-items: flex-start; }
+  .space > div { margin-top: 6px; }
+  /* Ensure horizontal scrolling for tables if needed */
+  .card > div[style*="overflow"]:not(.chart-wrap) {
+    overflow-x: auto;
+  }
+}
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  /* height remains as set in original style */
+}
+
     :root{
       --bg:#f3f6fb;
       --card:#fff;
